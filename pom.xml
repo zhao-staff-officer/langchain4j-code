@@ -71,6 +71,7 @@
 
     <modules>
         <module>langchain4j-01helloworld</module>
+        <module>langchain4j-02mulit-model-togeter</module>
     </modules>
 
     <build>
