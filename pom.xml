@@ -73,6 +73,7 @@
         <module>langchain4j-01helloworld</module>
         <module>langchain4j-02mulit-model-togeter</module>
         <module>langchain4j-03-integration</module>
+        <module>langchain4j-04low-high-api</module>
     </modules>
 
     <build>
