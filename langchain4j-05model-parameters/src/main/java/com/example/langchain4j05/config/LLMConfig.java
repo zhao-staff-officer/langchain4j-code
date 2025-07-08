@@ -1,9 +1,12 @@
 package com.example.langchain4j05.config;
 
+import com.example.langchain4j05.listener.TestChatModelListener;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import java.util.List;
 
 @Configuration
 public class LLMConfig {
@@ -16,6 +19,7 @@ public class LLMConfig {
                 .baseUrl("https://dashscope.aliyuncs.com/compatible-mode/v1")
                 .logRequests(Boolean.TRUE)
                 .logResponses(Boolean.TRUE)
+                .listeners(List.of(new TestChatModelListener()))
                 .build();
     }
 
