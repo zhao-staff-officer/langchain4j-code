@@ -74,6 +74,7 @@
         <module>langchain4j-02mulit-model-togeter</module>
         <module>langchain4j-03-integration</module>
         <module>langchain4j-04low-high-api</module>
+        <module>langchain4j-05model-parameters</module>
     </modules>
 
     <build>
