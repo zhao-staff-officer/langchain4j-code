@@ -14,6 +14,8 @@ public class LLMConfig {
                 .apiKey(System.getenv("QWEN-API-KEY"))
                 .modelName("qwen-plus")
                 .baseUrl("https://dashscope.aliyuncs.com/compatible-mode/v1")
+                .logRequests(Boolean.TRUE)
+                .logResponses(Boolean.TRUE)
                 .build();
     }
 
