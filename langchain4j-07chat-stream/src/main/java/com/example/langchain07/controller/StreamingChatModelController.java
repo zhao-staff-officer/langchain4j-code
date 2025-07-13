@@ -21,7 +21,7 @@ public class StreamingChatModelController {
     @Resource
     private ChatAssistant chatAssistant;
 
-    //http:://127.0.0.1/chatstream/chat?prompt=
+    //http:://127.0.0.1:9007/chatstream/chat?prompt=
     @GetMapping("/chatstream/chat")
     public Flux<String> chat(@RequestParam("prompt") String prompt){
         return Flux.create(emitter ->{
@@ -42,5 +42,32 @@ public class StreamingChatModelController {
                 }
             });
         });
+    }
+
+    //http:://127.0.0.1:9007/chatstream/chat2?prompt=
+    @GetMapping("/chatstream/chat2")
+    public void chat2(@RequestParam("prompt") String prompt){
+            streamingChatModel.chat(prompt, new StreamingChatResponseHandler() {
+                @Override
+                public void onPartialResponse(String partialResponse) {
+                    System.out.println(partialResponse);
+                }
+
+                @Override
+                public void onCompleteResponse(ChatResponse completeResponse) {
+                    System.out.println("---response over"+completeResponse);
+                }
+
+                @Override
+                public void onError(Throwable error) {
+                    error.printStackTrace();
+                }
+            });
+    }
+
+    //http:://127.0.0.1:9007/chatstream/chat?prompt=
+    @GetMapping("/chatstream/chat3")
+    public Flux<String> chat3(@RequestParam("prompt") String prompt){
+        return chatAssistant.chatFlux(prompt);
     }
 }
