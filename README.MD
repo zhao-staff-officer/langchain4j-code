@@ -1,4 +1,4 @@
-# LangChain4j学习笔记
+# 				LangChain4j学习笔记
 
 #### 官网地址
 
@@ -148,5 +148,186 @@ public class lowApiController {
 | `organizationId`   | `String`       | OpenAI 组织 ID                                 | 无                          | 可选参数，指定调用所属的 OpenAI 组织。用于团队账号的用量统计、权限管理（需在 OpenAI 平台提前配置组织）。 |
 | `responseFormat`   | `String`       | "json_object"、"text"                          | "text"                      | 输出格式： - "json_object"：强制模型生成 JSON 结构内容（需提示模型输出 JSON），适合提取结构化数据； - "text"：默认文本格式，适合自由文本生成。 |
 
+#### ChatStream：流式输出
+
+```java
+@Configuration
+public class LLMConfig {
+
+    @Bean(name = "qwen")
+    public ChatModel chatModelQwen(){
+        return OpenAiChatModel.builder()
+                .apiKey(System.getenv("QWEN-API-KEY"))
+                .modelName("qwen-plus")
+                .baseUrl("https://dashscope.aliyuncs.com/compatible-mode/v1")
+                .build();
+    }
+
+    @Bean
+    public StreamingChatModel streamingChatModel(){
+        return OpenAiStreamingChatModel.builder()
+                .apiKey(System.getenv("QWEN-API-KEY"))
+                .modelName("qwen-plus")
+                .baseUrl("https://dashscope.aliyuncs.com/compatible-mode/v1")
+                .build();
+    }
+
+    @Bean
+    public ChatAssistant chatAssistant(){
+        return AiServices.create(ChatAssistant.class,streamingChatModel());
+    }
 
 
+}
+```
+
+
+
+```java
+public interface ChatAssistant {
+
+    String chat(String prompt);
+
+    Flux<String> chatFlux(String prompt);
+}
+```
+
+```java
+/**
+* 流式返回
+*/
+@GetMapping("/chatstream/chat")
+public Flux<String> chat(@RequestParam("prompt") String prompt){
+    return Flux.create(emitter ->{
+        streamingChatModel.chat(prompt, new StreamingChatResponseHandler() {
+            @Override
+            public void onPartialResponse(String partialResponse) {
+                emitter.next(partialResponse);
+            }
+
+            @Override
+            public void onCompleteResponse(ChatResponse completeResponse) {
+                emitter.complete();
+            }
+
+            @Override
+            public void onError(Throwable error) {
+                emitter.error(error);
+            }
+        });
+    });
+}
+ss
+/**
+* 流式返回
+*/
+@GetMapping("/chatstream/chat3")
+    public Flux<String> chat3(@RequestParam("prompt") String prompt){
+        return chatAssistant.chatFlux(prompt);
+}
+
+```
+
+
+
+
+
+
+
+
+
+#### ChatMemory：聊天缓存
+
+| 类型               | 名称                      | 核心机制                                                     | 主要特点                                                     | 适用场景                                                     | 优势                                                         | 局限性                                                       |
+| ------------------ | ------------------------- | ------------------------------------------------------------ | :----------------------------------------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| 消息窗口聊天记忆   | `MessageWindowChatMemory` | 以**消息数量**为窗口限制，只保留最近的 N 条消息（包括用户、AI、函数调用等所有类型消息） | - 窗口大小通过`maxMessages`参数设置（如保留最近 10 条消息） - 直接基于消息条数截断历史，不考虑消息长度 | - 消息长度较均匀的场景（如短对话） - 对消息数量有明确控制需求的场景 | - 实现简单，易于理解和调试 - 内存占用可通过消息数量大致预估  | - 无法处理长消息（如大段文本、文档），可能因单条消息过长导致总上下文超限 - 同等消息数量下，总 Token 数可能波动较大 |
+| Token 窗口聊天记忆 | `TokenWindowChatMemory`   | 以**Token 数量**为窗口限制，保留最近的、总 Token 数不超过阈值的消息（会自动截断超出 Token 限制的历史消息） | - 窗口大小通过`maxTokens`参数设置（如保留最近 2000 个 Token） - 需结合 Token 计数器（如`TokenCounter`）计算每条消息的 Token 数 - 优先保留最新消息，当总 Token 数超限时，从最早的消息开始删除 | - 消息长度差异大的场景（如混合短问答和长文档） - 需严格控制上下文 Token 总量的场景（如避免超出 LLM 的上下文窗口限制） | - 精准控制上下文总 Token 数，避免触发模型的 Token 限制 - 自适应不同长度的消息，确保有效信息不被截断 | - 实现较复杂，需依赖 Token 计数器（不同模型的 Token 计算规则可能不同） - 可能因频繁计算 Token 数带来轻微性能开销 |
+
+- MessageWindowChatMemory
+
+```java
+@Bean(name = "chatMessageWindowChatMemory")
+public ChatMemoryAssistant chatMemoryWindowChatMemory(ChatModel chatModel){
+    return AiServices
+            .builder(ChatMemoryAssistant.class)
+            .chatModel(chatModel)
+            .chatMemoryProvider(memoryId -> MessageWindowChatMemory.withMaxMessages(100))
+            .build();
+}
+```
+
+- TokenWindowChatMemory
+
+```java
+@Bean(name = "chatTokenChatMemory")
+public ChatMemoryAssistant chatMemoryTokenChatMemory(ChatModel chatModel){
+    TokenCountEstimator tokenCountEstimator = new OpenAiTokenCountEstimator("gpt-4");
+
+    return AiServices
+            .builder(ChatMemoryAssistant.class)
+            .chatModel(chatModel)
+            .chatMemoryProvider(memoryId -> TokenWindowChatMemory.withMaxTokens(1000,tokenCountEstimator))
+            .build();
+}
+```
+
+- 使用
+
+```java
+public interface ChatMemoryAssistant {
+
+    String chatWithMemory(@MemoryId Long userId, @UserMessage String prompt);
+}
+```
+
+
+
+#### Message：消息
+
+###### type：类型
+
+| 消息类型                  | 说明                   | 作用                               | 使用场景                                      |
+| ------------------------- | ---------------------- | ---------------------------------- | --------------------------------------------- |
+| **SystemMessage**         | 系统级指令消息         | 设置 LLM 的全局行为和角色          | 对话开始前配置模型（如 "你是一个专业的医生"） |
+| **UserMessage**           | 用户输入的消息         | 传递用户的问题或指令               | 用户提问："感冒应该吃什么药？"                |
+| **AIMessage**             | 模型生成的回复消息     | 包含 LLM 生成的文本或函数调用请求  | 模型回答："建议服用布洛芬..."                 |
+| **FunctionCallMessage**   | 模型发起的函数调用消息 | 封装函数名和参数，触发外部工具调用 | 模型请求："调用 getWeather 函数查询北京天气"  |
+| **FunctionResultMessage** | 函数调用结果消息       | 携带外部函数执行的结果数据         | 函数返回："北京当前温度 25°C，晴"             |
+
+###### Prompt：提示词
+
+- @V
+
+```java
+@SystemMessage("你是一位专业的中国法律顾问,只回答中国法律相关的问题。输出限制：对于其他领域的问题禁止回答，直接返回'抱歉，我只能回答中国法律相关的问题'")
+@UserMessage("请回答以下法律问题：{{question}},字数控制在{{length}}以内")
+String chat(@V("question")String question,@V("length")int length);
+```
+
+- @StructuredPrompt
+
+```java
+@Data
+@StructuredPrompt("根据中国{{legal}}法律，解答以下问题：{{question}}")
+public class LawPrompt {
+
+    private String legal;
+
+    private String question;
+}
+```
+
+- PromptTemplate
+
+```java
+public String test3(){
+        String role = "外科医生";
+        String question = "牙疼";
+        PromptTemplate template = PromptTemplate.from("你是一个{{it}}助手,{{question}}怎么办");
+        Prompt prompt = template.apply(Map.of("it",role,"question",question));
+        UserMessage userMessage = prompt.toUserMessage();
+        ChatResponse chatResponse =  chatModel.chat(userMessage);
+        System.out.println(chatResponse.aiMessage().text());
+        return "success:"+"<br> \n\n chat: "+chatResponse.aiMessage().text();
+}
+```
