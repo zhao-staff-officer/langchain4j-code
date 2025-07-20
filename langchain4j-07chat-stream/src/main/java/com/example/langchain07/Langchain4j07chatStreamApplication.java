@@ -4,10 +4,10 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class Langchain07chatStreamApplication {
+public class Langchain4j07chatStreamApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(Langchain07chatStreamApplication.class, args);
+		SpringApplication.run(Langchain4j07chatStreamApplication.class, args);
 	}
 
 }
