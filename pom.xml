@@ -88,6 +88,7 @@
         <module>langchain4j-08chat-memory</module>
         <module>langchain4j-09chat-prompt</module>
         <module>langchain4j-10chat-persistence</module>
+        <module>langchain4j-11chat-function</module>
     </modules>
 
     <build>
