@@ -1,3 +1,9 @@
+
+
+
+
+
+
 # 				LangChain4j学习笔记
 
 #### 官网地址
@@ -282,6 +288,64 @@ public interface ChatMemoryAssistant {
 
 
 
+#### ChatMemoryPersistence: 聊天记录持久化
+
+配置Bean
+
+```java
+@Bean
+public ChatPersistenceAssistant chatPersistenceAssistant(ChatModel chatModel){
+
+    ChatMemoryProvider chatMemoryProvider = memoryId -> MessageWindowChatMemory.builder()
+            .id(memoryId)
+            .maxMessages(1000)
+            .chatMemoryStore(redisChatMemoryStore)
+            .build();
+
+    return AiServices.builder(ChatPersistenceAssistant.class)
+            .chatModel(chatModel)
+            .chatMemoryProvider(chatMemoryProvider)
+            .build();
+}
+```
+
+
+
+配置持久化实现类
+
+```java
+@Component
+public class RedisChatMemoryStore implements ChatMemoryStore {
+
+    public static final String CHAT_MEMORY_PREFIX = "CHAT_MEMORY:";
+
+    @Resource
+    private RedisTemplate<String,String> redisTemplate;
+
+    @Override
+    public List<ChatMessage> getMessages(Object memoryId) {
+        String chatValue = redisTemplate.opsForValue().get(CHAT_MEMORY_PREFIX+memoryId);
+        return ChatMessageDeserializer.messagesFromJson(chatValue);
+    }
+
+    @Override
+    public void updateMessages(Object memoryId, List<ChatMessage> messages) {
+        redisTemplate.opsForValue().set(CHAT_MEMORY_PREFIX+memoryId, ChatMessageSerializer.messagesToJson(messages));
+    }
+
+    @Override
+    public void deleteMessages(Object memoryId) {
+        redisTemplate.delete(CHAT_MEMORY_PREFIX+memoryId);
+    }
+}
+```
+
+
+
+
+
+
+
 #### Message：消息
 
 ###### type：类型
@@ -331,3 +395,20 @@ public String test3(){
         return "success:"+"<br> \n\n chat: "+chatResponse.aiMessage().text();
 }
 ```
+
+
+
+
+
+#### FunctionCalling(Tools)：模型回调
+
+
+
+There is a concept known as "tools," or "function calling". It allows the LLM to call, when necessary, one or more available tools, usually defined by the developer. A tool can be anything: a web search, a call to an external API, or the execution of a specific piece of code, etc. LLMs cannot actually call the tool themselves; instead, they express the intent to call a specific tool in their response (instead of responding in plain text). We, as developers, should then execute this tool with the provided arguments and report back the results of the tool execution.
+
+它允许 LLM 在必要时调用一个或多个可用工具，这些工具通常由开发人员定义。 工具可以是任何东西：Web 搜索、对外部 API 的调用或特定代码的执行等。 LLM 实际上不能自己调用该工具;相反，他们表达了意图 在其响应中调用特定工具（而不是以纯文本形式响应）。 然后，作为开发人员，我们应该使用提供的参数执行此工具并报告 工具执行的结果。
+
+
+
+
+
