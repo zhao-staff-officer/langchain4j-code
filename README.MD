@@ -410,5 +410,107 @@ There is a concept known as "tools," or "function calling". It allows the LLM to
 
 
 
+```java
+@Bean
+public FunctionAssistant functionAssistant(ChatModel chatModel){
+    return AiServices.builder(FunctionAssistant.class)
+            .chatModel(chatModel)
+            .tools(new InvoiceHandler())
+            .build();
+}
+```
 
 
+
+```java
+@Slf4j
+public class InvoiceHandler {
+
+    @Tool("根据用户提交的开票信息进行开票")
+    public String handle(@P("公司名称")String companyName,@P("税号")String dutyNumber,@P("开票金额") String amount) throws Exception {
+        log.info("companyName=={} dutyNumber=={} amount=={}",companyName,dutyNumber,amount);
+        System.out.println(new WeatherService().getWeatherV2("101010100"));
+        return "开票成功";
+    }
+}
+```
+
+
+
+#### Embedding(Vector) 向量存储
+
+Embedding（向量嵌入）是机器学习和人工智能领域中一种核心技术，其本质是将**高维、离散或抽象的对象**（如文本、图像、音频、用户 ID 等）映射到一个**低维、连续的向量空间**，得到的这个低维向量就称为 “Embedding 向量”（或简称 “向量嵌入”）。
+
+
+
+```java
+
+@Bean
+public QdrantClient qdrantClient(){
+    QdrantGrpcClient.Builder grpcClientBuilder = QdrantGrpcClient.newBuilder("127.0.0.1",6334,false);
+    return new QdrantClient(grpcClientBuilder.build());
+}
+
+
+@Bean
+public EmbeddingStore<TextSegment> embeddingStore(){
+    return QdrantEmbeddingStore.builder()
+            .host("127.0.0.1")
+            .port(6334)
+            .collectionName("test-qdrant")
+            .build();
+}
+```
+
+
+
+
+
+```java
+/**
+* 插入数据
+*/
+@GetMapping("/embedding/add")
+public String add(){
+    String prompt = """
+            咏鸡
+            你好呀
+            """;
+    TextSegment segment1 = TextSegment.from(prompt);
+    segment1.metadata().put("author","zzyy");
+    Embedding embedding1=embeddingModel.embed(segment1).content();
+    String result = embeddingStore.add(embedding1,segment1);
+    return  result;
+}
+
+/**
+* 查询数据
+*/
+@GetMapping("/embedding/query")
+public void query1(){
+    Embedding queryEmbedding = embeddingModel.embed("咏鸡说的是什么").content();
+    EmbeddingSearchRequest embeddingSearchRequest = EmbeddingSearchRequest.builder()
+            .queryEmbedding(queryEmbedding)
+            .maxResults(1)
+            .build();
+    EmbeddingSearchResult<TextSegment> searchResult = embeddingStore.search(embeddingSearchRequest);
+    System.out.println(searchResult.matches().get(0).embedded().text());
+}
+
+/**
+* 查询数据
+*/
+@GetMapping("/embedding/query2")
+public void query2(){
+    Embedding queryEmbedding = embeddingModel.embed("咏鸡").content();
+    EmbeddingSearchRequest embeddingSearchRequest = EmbeddingSearchRequest.builder()
+            .queryEmbedding(queryEmbedding)
+            .filter(metadataKey("author").isEqualTo("zzyy"))
+            .maxResults(1)
+            .build();
+
+    EmbeddingSearchResult<TextSegment> searchResult = embeddingStore.search(embeddingSearchRequest);
+
+    System.out.println(searchResult.matches().get(0).embedded().text());
+}
+```
