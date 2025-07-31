@@ -19,14 +19,6 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class LLMConfig {
 
-    @Bean
-    public ChatModel chatModel(){
-        return OpenAiChatModel.builder()
-                .apiKey(System.getenv("QWEN-API-KEY"))
-                .modelName("qwen-plus")
-                .baseUrl("https://dashscope.aliyuncs.com/compatible-mode/v1")
-                .build();
-    }
 
     @Bean
     public QdrantClient qdrantClient(){
@@ -34,6 +26,14 @@ public class LLMConfig {
         return new QdrantClient(grpcClientBuilder.build());
     }
 
+    @Bean
+    public EmbeddingModel embeddingModel(){
+        return OpenAiEmbeddingModel.builder()
+                .apiKey(System.getenv("QWEN-API-KEY"))
+                .modelName("text-embedding-v3")
+                .baseUrl("https://dashscope.aliyuncs.com/compatible-mode/v1")
+                .build();
+    }
 
     @Bean
     public EmbeddingStore<TextSegment> embeddingStore(){
@@ -41,6 +41,15 @@ public class LLMConfig {
                 .host("127.0.0.1")
                 .port(6334)
                 .collectionName("test-qdrant")
+                .build();
+    }
+
+    @Bean
+    public ChatModel chatModel(){
+        return OpenAiChatModel.builder()
+                .apiKey(System.getenv("QWEN-API-KEY"))
+                .modelName("qwen-plus")
+                .baseUrl("https://dashscope.aliyuncs.com/compatible-mode/v1")
                 .build();
     }
 
