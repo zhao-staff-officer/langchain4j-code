@@ -514,3 +514,14 @@ public void query2(){
     System.out.println(searchResult.matches().get(0).embedded().text());
 }
 ```
+
+
+
+
+
+#### RAG
+
+RAG（Retrieval-Augmented Generation，检索增强生成）是一种结合**信息检索**与**大语言模型（LLM）生成能力**的技术，核心目标是让 AI 在生成回答时，能基于**外部知识库中的准确、最新信息**，而非仅依赖模型训练时学到的（可能过时或不完整的）内置知识。
+
+
+
