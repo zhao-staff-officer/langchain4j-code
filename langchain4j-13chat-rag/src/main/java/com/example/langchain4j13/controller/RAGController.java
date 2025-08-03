@@ -1,5 +1,6 @@
 package com.example.langchain4j13.controller;
 
+import com.example.langchain4j13.component.CleanDocumentComponent;
 import com.example.langchain4j13.service.ChatAssistant;
 import dev.langchain4j.data.document.Document;
 import dev.langchain4j.data.document.loader.FileSystemDocumentLoader;
@@ -34,16 +35,20 @@ public class RAGController {
 
     @GetMapping("/rag/test")
     public String test() throws FileNotFoundException {
-        Document document = new ApacheTikaDocumentParser().parse(new FileInputStream("E:\\dataSource\\简历\\test.doc"));
+        Document documentLoad = new ApacheTikaDocumentParser().parse(new FileInputStream("E:\\dataSource\\简历\\test.doc"));
 //        TextSegment textSegment = document.toTextSegment();
 //        Embedding content = embeddingModel.embed(document.toTextSegment()).content();
 //        embeddingStore.add(content);
 
         EmbeddingStoreIngestor embeddingStoreIngestor = EmbeddingStoreIngestor.builder()
+                .documentTransformer(document -> {
+                    document.metadata().put("技能","java");
+                    return CleanDocumentComponent.cleanDocument(document);
+                })
                 .embeddingModel(embeddingModel)
                 .embeddingStore(embeddingStore)
                 .build();
-        embeddingStoreIngestor.ingest(document);
+        embeddingStoreIngestor.ingest(documentLoad);
 
         String result = chatAssistant.chat("拥有什么技能");
         log.info("输出请求答案：{}",result);
