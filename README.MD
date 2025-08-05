@@ -525,3 +525,73 @@ RAG（Retrieval-Augmented Generation，检索增强生成）是一种结合**信
 
 
 
+##### 核心API
+
+###### Document 文档
+
+一个`Document`类代表整个文档，例如单个PDF文件或网页。目前，`Document`只能表示文本信息，但未来的更新将使其也能支持图像和表格。
+
+
+
+###### MetaData 元数据
+
+个`Document`都包含`Metadata`。它存储有关`Document`的元信息，例如名称、来源、上次更新日期、所有者或任何其他相关详细信息。
+
+
+
+###### DocumentLoader 文档加载器
+
+你可以从一个`String`创建一个`Document`，但更简单的方法是使用我们库中包含的文档加载器之一
+
+
+
+| FileSystemDocumentLoader         | 来自`langchain4j`模块的`FileSystemDocumentLoader`            |
+| -------------------------------- | ------------------------------------------------------------ |
+| ClassPathDocumentLoader          | 来自`langchain4j`模块的`ClassPathDocumentLoader`             |
+| UrlDocumentLoader                | 来自 `langchain4j` 模块的 `UrlDocumentLoader`                |
+| AmazonS3DocumentLoader           | 来自`langchain4j-document-loader-amazon-s3`模块的`AmazonS3DocumentLoader` |
+| AzureBlobStorageDocumentLoader   | 来自`langchain4j-document-loader-azure-storage-blob`模块的`AzureBlobStorageDocumentLoader` |
+| GitHubDocumentLoader             | 来自`langchain4j-document-loader-github`模块的`GitHubDocumentLoader` |
+| GoogleCloudStorageDocumentLoader | 来自 `langchain4j-document-loader-google-cloud-storage` 模块的 `GoogleCloudStorageDocumentLoader` |
+| SeleniumDocumentLoader           | 来自`langchain4j-document-loader-selenium`模块的`SeleniumDocumentLoader` |
+| PlaywrightDocumentLoader         | 来自`langchain4j-document-loader-playwright`模块的`PlaywrightDocumentLoader` |
+| TencentCosDocumentLoader         | 来自 `langchain4j-document-loader-tencent-cos` 模块的 `TencentCosDocumentLoader` |
+
+
+
+###### Document Parser 文档解析器
+
+文档可以表示各种格式的文件，如PDF、DOC、TXT等
+
+
+
+| TextDocumentParser         | 来自`langchain4j`模块的`TextDocumentParser`，它可以解析纯文本格式的文件（例如TXT、HTML、MD等） |
+| -------------------------- | ------------------------------------------------------------ |
+| ApachePdfBoxDocumentParser | 来自 `langchain4j-document-parser-apache-pdfbox` 模块的 `ApachePdfBoxDocumentParser`，它可以解析PDF文件 |
+| ApachePoiDocumentParser    | 来自`langchain4j-document-parser-apache-poi`模块的`ApachePoiDocumentParser`，它可以解析微软办公软件文件格式（如DOC、DOCX、PPT、PPTX、XLS、XLSX等）。 |
+| ApacheTikaDocumentParser   | 来自`langchain4j-document-parser-apache-tika`模块的`ApacheTikaDocumentParser`，它可以自动检测和解析几乎所有现有的文件格式。 |
+
+
+
+###### Document Transformer 文档转换器
+
+实现可执行多种文档转换：清洗，过滤，丰富内容，总结
+
+
+
+###### Text Segment 文本片段
+
+**TextSegment（文本片段）** 指的是将原始文档（如 PDF、Word、TXT 等）分割后得到的**较小、独立的文本单元**。它是连接原始文档与向量数据库、大模型之间的核心中间产物，直接影响检索精度和最终回答质量。
+
+
+
+###### Document Splitter 文档拆分器
+
+
+
+
+
+
+
+
+
