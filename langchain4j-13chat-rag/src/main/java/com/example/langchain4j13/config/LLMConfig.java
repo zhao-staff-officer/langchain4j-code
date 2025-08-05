@@ -16,6 +16,8 @@ import io.qdrant.client.QdrantGrpcClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import static dev.langchain4j.store.embedding.filter.MetadataFilterBuilder.metadataKey;
+
 @Configuration
 public class LLMConfig {
 
@@ -54,11 +56,16 @@ public class LLMConfig {
     }
 
     @Bean
-    public ChatAssistant assistant(ChatModel chatModel,EmbeddingStore<TextSegment> embeddingStore){
+    public ChatAssistant assistant(ChatModel chatModel,EmbeddingModel embeddingModel,EmbeddingStore<TextSegment> embeddingStore){
+        EmbeddingStoreContentRetriever embeddingStoreContentRetriever = EmbeddingStoreContentRetriever.builder()
+                .embeddingModel(embeddingModel)
+                .embeddingStore(embeddingStore)
+//                .filter(metadataKey("name").isEqualTo("赵参谋"))
+                .build();
         return AiServices.builder(ChatAssistant.class)
                 .chatModel(chatModel)
                 .chatMemory(MessageWindowChatMemory.withMaxMessages(50))
-                .contentRetriever(EmbeddingStoreContentRetriever.from(embeddingStore))
+                .contentRetriever(embeddingStoreContentRetriever)
                 .build();
     }
 }
