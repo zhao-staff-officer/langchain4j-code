@@ -66,6 +66,7 @@ public class LLMConfig {
                 .chatModel(chatModel)
                 .chatMemory(MessageWindowChatMemory.withMaxMessages(50))
                 .contentRetriever(embeddingStoreContentRetriever)
+//                .retrievalAugmentor()
                 .build();
     }
 }

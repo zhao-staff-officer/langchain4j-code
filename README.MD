@@ -525,7 +525,7 @@ RAG（Retrieval-Augmented Generation，检索增强生成）是一种结合**信
 
 
 
-##### 核心API
+##### 存储API
 
 ###### Document 文档
 
@@ -637,3 +637,43 @@ angChain4j 的 `recursive()` 分割器针对不同语言预设了分隔符列表
 
 
 ###### Embedding Store Ingestor 嵌入存储摄取器
+
+
+
+###### Example 示例
+
+```java
+@GetMapping("/rag/test")
+    public void test() throws FileNotFoundException {
+        Document documentLoad = new ApacheTikaDocumentParser().parse(new FileInputStream("E:\\dataSource\\简历\\test.doc"));
+//        TextSegment textSegment = document.toTextSegment();
+//        Embedding content = embeddingModel.embed(document.toTextSegment()).content();
+//        embeddingStore.add(content);
+
+        EmbeddingStoreIngestor embeddingStoreIngestor = EmbeddingStoreIngestor.builder()
+//                .documentTransformer(document -> {
+//                    document.metadata().put("技能","java");
+//                    return CleanDocumentComponent.cleanDocument(document);
+//                })
+                .documentSplitter(DocumentSplitters.recursive(500,50,new OpenAiTokenCountEstimator("gpt-4o-mini")))
+                .textSegmentTransformer(textSegment -> {
+                    System.out.println("切割后文档："+ textSegment.text());
+                    return TextSegment.from(textSegment.text(),textSegment.metadata().put("name","测试"));
+                })
+                .embeddingModel(embeddingModel)
+                .embeddingStore(embeddingStore)
+                .build();
+        IngestionResult ingestionResult = embeddingStoreIngestor.ingest(documentLoad);
+    }
+```
+
+
+
+
+
+
+
+##### 查询API
+
+​	
+
