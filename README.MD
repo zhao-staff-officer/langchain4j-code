@@ -525,7 +525,11 @@ RAG（Retrieval-Augmented Generation，检索增强生成）是一种结合**信
 
 
 
-##### 存储API
+##### Core API 核心API
+
+负责文件转换存储
+
+
 
 ###### Document 文档
 
@@ -673,7 +677,93 @@ angChain4j 的 `recursive()` 分割器针对不同语言预设了分隔符列表
 
 
 
-##### 查询API
+##### Retrieval Augmentor  检索增强器
 
-​	
+etrieval Augmentor 是RAG管道的入口点。它负责使用从各种来源检索到的相关`Content`来增强`ChatMessage`
 
+###### Query  查询器
+
+表示 RAG 管道中的用户查询。它包含查询文本和查询元数据
+
+
+
+Query Metadata  查询元数据
+
+| 名称                    | 描述                                    |
+| ----------------------- | --------------------------------------- |
+| Metadata.userMessage()  | 应扩充的原始 `UserMessage`              |
+| Metadata.chatMemoryId() | 一个带有 `@MemoryId` 注解的方法参数的值 |
+| Metadata.chatMemory()   | 所有之前的 `ChatMessage`                |
+
+
+
+Query Transformer 查询变换器
+
+将给定的 `Query` 转换为一个或多个 `Query`。其目的是通过修改或扩展原始 `Query` 来提高检索质量。
+
+| 名称                             | 描述                 |
+| -------------------------------- | -------------------- |
+| Query compression                | 查询压缩             |
+| Query expansion                  | 查询扩展             |
+| Query re-writing                 | 查询重写             |
+| Step-back prompting              | 回退提示             |
+| Hypothetical document embeddings | 假设文档嵌入（HyDE） |
+
+
+
+###### Content Retriever 内容检索器
+
+ContentRetriever 使用给定的Query 从底层数据源检索content
+
+| 名称                                  | 描述                 |
+| ------------------------------------- | -------------------- |
+| Embedding store                       | 嵌入存储             |
+| Full-text search engine               | 全文搜索引擎         |
+| Hybrid of vector and full-text search | 向量与全文搜索的混合 |
+| Web Search Engine                     | 网页搜索引擎         |
+| Knowledge graph                       | 知识图谱             |
+| SQL database SQL                      | 数据库               |
+
+
+
+###### Quert Router 查询路由器
+
+QueryRouter负责Query路由到合适的ContentRetriever
+
+| 名称                        | 描述                                                         |
+| --------------------------- | ------------------------------------------------------------ |
+| Default Query Router        | 默认查询路由器:它将每个 `Query` 路由到所有已配置的 ContentRetriever |
+| Language Model Query Router | 语言模型查询路由器:使用大语言模型（LLM）来决定将给定的 `Query` 路由到何处 |
+
+
+
+###### Content Aggregator 内容聚合
+
+ContentAggregator 负责聚合来自以下的多个已排序的`Content`列表
+
+| 名称                          | 描述                                                         |
+| ----------------------------- | ------------------------------------------------------------ |
+| Default Content Aggregator    | 默认内容聚合器：它执行两阶段的互反排序融合 (RRF)             |
+| Re-Ranking Content Aggregator | 重排内容聚合器：使用`ScoringModel`（如Cohere）来执行重新排序 |
+
+
+
+###### Content Injector 内容注入器
+
+ContentInjector负责将content注入到UserMessage中
+
+| 名称                     | 描述                                                         |
+| ------------------------ | ------------------------------------------------------------ |
+| Default Content Injector | 默认内容注入器：它只是将 `Content` 以 `Answer using the following information:` 为前缀追加到 `UserMessage` 的末尾 |
+
+
+
+###### Parallelization  并行化
+
+当只有一个 `Query` 和一个 `ContentRetriever` 时，`DefaultRetrievalAugmentor` 会在同一线程中执行查询路由和内容检索。否则，会使用一个 `Executor` 来并行处理。默认情况下，会使用一个经过修改的（`keepAliveTime` 为1秒而非60秒）`Executors.newCachedThreadPool()`，但你可以在创建 `DefaultRetrievalAugmentor` 时提供一个自定义的 `Executor` 实例
+
+
+
+###### Accessing Sources 访问来源
+
+在流式传输时，可以使用 `onRetrieved()` 方法指定一个 `Consumer<List<Content>>；
