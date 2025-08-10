@@ -5,6 +5,8 @@ import dev.langchain4j.data.document.Document;
 import dev.langchain4j.data.document.parser.apache.tika.ApacheTikaDocumentParser;
 import dev.langchain4j.data.document.splitter.DocumentSplitters;
 import dev.langchain4j.data.segment.TextSegment;
+import dev.langchain4j.internal.Json;
+import dev.langchain4j.model.chat.response.ChatResponse;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.openai.OpenAiTokenCountEstimator;
 import dev.langchain4j.rag.content.Content;
@@ -62,7 +64,16 @@ public class RAGController {
     public String test2(){
         chatAssistant.chat("赵参谋拥有什么技能")
                 .onRetrieved((List<Content> source)->{
-
+                    log.info("检索内容{}", Json.toJson(source));
+                })
+                .onPartialResponse((String partRes)->{
+                    log.info(partRes);
+                })
+                .onCompleteResponse((ChatResponse chatResponse)  -> {
+                    log.info("完成对话：Token信息：{}",Json.toJson(chatResponse.metadata().tokenUsage()));
+                })
+                .onError(throwable -> {
+                    log.error("对话异常：",throwable);
                 })
                 .start();
         return null;
