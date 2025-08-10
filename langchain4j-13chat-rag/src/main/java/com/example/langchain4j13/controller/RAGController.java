@@ -1,18 +1,14 @@
 package com.example.langchain4j13.controller;
 
-import com.example.langchain4j13.component.CleanDocumentComponent;
 import com.example.langchain4j13.service.ChatAssistant;
 import dev.langchain4j.data.document.Document;
-import dev.langchain4j.data.document.DocumentSplitter;
-import dev.langchain4j.data.document.loader.FileSystemDocumentLoader;
-import dev.langchain4j.data.document.parser.TextDocumentParser;
 import dev.langchain4j.data.document.parser.apache.tika.ApacheTikaDocumentParser;
 import dev.langchain4j.data.document.splitter.DocumentSplitters;
-import dev.langchain4j.data.embedding.Embedding;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.openai.OpenAiTokenCountEstimator;
-import dev.langchain4j.model.output.Response;
+import dev.langchain4j.rag.content.Content;
+import dev.langchain4j.service.AiServices;
 import dev.langchain4j.store.embedding.EmbeddingStore;
 import dev.langchain4j.store.embedding.EmbeddingStoreIngestor;
 import dev.langchain4j.store.embedding.IngestionResult;
@@ -23,6 +19,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.util.List;
+
 
 @Slf4j
 @RestController
@@ -62,9 +60,12 @@ public class RAGController {
 
     @GetMapping("/rag/test2")
     public String test2(){
-        String result = chatAssistant.chat("赵参谋拥有什么技能");
-        log.info("输出请求答案：{}",result);
-        return result;
+        chatAssistant.chat("赵参谋拥有什么技能")
+                .onRetrieved((List<Content> source)->{
+
+                })
+                .start();
+        return null;
     }
 
 }
