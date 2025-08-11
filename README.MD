@@ -767,3 +767,79 @@ ContentInjector负责将content注入到UserMessage中
 ###### Accessing Sources 访问来源
 
 在流式传输时，可以使用 `onRetrieved()` 方法指定一个 `Consumer<List<Content>>；
+
+
+
+###### Example 示例
+
+```java
+@Configuration
+public class RetrieverConfig {
+
+    @Bean
+    public EmbeddingStoreContentRetriever embeddingRetriever(EmbeddingModel embeddingModel, EmbeddingStore embeddingStore){
+        return EmbeddingStoreContentRetriever.builder()
+                .embeddingModel(embeddingModel)
+                .embeddingStore(embeddingStore)
+                .maxResults(3) //返回条数
+//                .dynamicMaxResults(query -> 3)
+//                .minScore(0.75) //相似度阈值0-1
+//                .dynamicMinScore(query -> 0.75)
+//                .filter(metadataKey("name").isEqualTo("赵参谋")) //过滤器
+//                .dynamicFilter(query -> {
+//                    String userId = getUserId(query.metadata().chatMemoryId());
+//                    return metadataKey("userId").isEqualTo(userId);
+//                })
+                .build();
+    }
+
+    @Value("${spring.datasource.url:jdbc:mysql://localhost:3306/your_database}")
+    private String databaseUrl;
+
+    @Value("${spring.datasource.username:root}")
+    private String databaseUsername;
+
+    @Value("${spring.datasource.password:password}")
+    private String databasePassword;
+
+    @Bean
+    public SqlDatabaseContentRetriever sqlRetriever(ChatModel chatModel){
+        MysqlDataSource dataSource = new MysqlDataSource();
+        dataSource.setUrl(databaseUrl);
+        dataSource.setUser(databaseUsername);
+        dataSource.setPassword(databasePassword);
+
+        return SqlDatabaseContentRetriever.builder()
+                .dataSource(dataSource)
+                .chatModel(chatModel)
+                .build();
+    }
+}
+```
+
+
+
+
+
+```java
+ @Bean
+    public ChatAssistant assistant( ChatModel chatModel,
+                                    StreamingChatModel streamingChatModel,
+                                    EmbeddingStoreContentRetriever embeddingStoreContentRetriever,
+                                    SqlDatabaseContentRetriever sqlDatabaseContentRetriever){
+//        Map<ContentRetriever, String> retrieverToDescription = new HashMap<>();
+//        retrieverToDescription.put(embeddingStoreContentRetriever, "Embedding Store");
+//        retrieverToDescription.put(sqlDatabaseContentRetriever, "SQL Database");
+//        QueryRouter queryRouter = new LanguageModelQueryRouter(chatModel,retrieverToDescription);
+        QueryRouter queryRouter = new DefaultQueryRouter(embeddingStoreContentRetriever,sqlDatabaseContentRetriever);
+        RetrievalAugmentor retrievalAugmentor = DefaultRetrievalAugmentor.builder().queryRouter(queryRouter).build();
+
+        return AiServices.builder(ChatAssistant.class)
+                .chatModel(chatModel)
+                .streamingChatModel(streamingChatModel)
+                .chatMemory(MessageWindowChatMemory.withMaxMessages(50))
+                .retrievalAugmentor(retrievalAugmentor)
+//                .contentRetriever(embeddingStoreContentRetriever)
+                .build();
+    }
+```
