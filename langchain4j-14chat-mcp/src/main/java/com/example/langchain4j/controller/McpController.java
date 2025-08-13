@@ -30,7 +30,7 @@ public class McpController {
         //构建McpTransport协议
         McpTransport transport = new StdioMcpTransport.Builder()
                 .command(List.of("cmd","/c","npx","-y","@baidumap/mcp-server-baidu-map"))
-                .environment(Map.of("BAIDU_MAP_API_KEY ",System.getenv("BAIDU-API-KEY")))
+                .environment(Map.of("BAIDU_MAP_API_KEY",System.getenv("BAIDU-API-KEY")))
                 .logEvents(true)
                 .build();
 
