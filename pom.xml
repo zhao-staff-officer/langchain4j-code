@@ -91,6 +91,7 @@
         <module>langchain4j-11chat-function</module>
         <module>langchain4j-12chat-embedding</module>
         <module>langchain4j-13chat-rag</module>
+        <module>langchain4j-14chat-mcp</module>
     </modules>
 
     <build>
